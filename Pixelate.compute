@@ -1,0 +1,73 @@
+#pragma kernel Pixelate
+
+RWTexture2D<float4> _Result;
+
+int _BlockSize;
+int _ResultWidth;
+int _ResultHeight;
+
+float4 _Colors[64];
+int _numColors;
+
+float diffCurr;
+float diffMin;
+    
+[numthreads(8,8,1)]
+void Pixelate (uint3 id : SV_DispatchThreadID)
+{
+
+    const float2 startPos = id.xy * _BlockSize;
+    
+    if (startPos.x >= _ResultWidth || startPos.y >= _ResultHeight)
+        return;
+    
+    const int blockWidth = min(_BlockSize, _ResultWidth - startPos.x);
+    const int blockHeight = min(_BlockSize, _ResultHeight - startPos.y);
+    const int numPixels = blockHeight * blockWidth;
+
+    float4 color = float4(0, 0, 0, 0);
+
+    for (int i = 0; i < blockWidth; ++i)
+    {
+        for (int j = 0; j < blockHeight; ++j)
+        {
+            const uint2 pixelPos = uint2(startPos.x + i, startPos.y + j);
+            color += _Result[pixelPos];
+        }
+    }
+    color /= numPixels;
+
+
+
+    for (int m = 0; m < blockWidth; ++m)
+    {
+        for (int n = 0; n < blockHeight; ++n)
+        {
+            const uint2 pixelPos = uint2(startPos.x + m, startPos.y + n);
+            diffCurr = 3;
+            diffMin = 100;
+
+            for (int c = 0; c < _numColors; ++c){
+
+                float R = abs(_Result[pixelPos].r - _Colors[c].r);
+                float G = abs(_Result[pixelPos].g - _Colors[c].g);
+                float B = abs(_Result[pixelPos].b - _Colors[c].b);
+
+                if(R < G && R < B) diffCurr = (R * 1.3  + G  + B);
+                else if(G < B && G < R) diffCurr = (R  + G * 1.3  + B);
+                else diffCurr = (R  + G  + B * 1.3);
+                
+                if (diffCurr <  diffMin){diffMin = diffCurr; color = float4(_Colors[c]);}
+            }
+        }
+    }
+
+    for (int l = 0; l < blockWidth; ++l)
+    {
+        for (int j = 0; j < blockHeight; ++j)
+        {
+            const uint2 pixelPos = uint2(startPos.x + l, startPos.y + j);
+            _Result[pixelPos] = color;
+        }
+    }
+}
