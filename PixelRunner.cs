@@ -5,20 +5,21 @@ public class PixelRunner : MonoBehaviour
     public ComputeShader PixelateComputeShader;
     public Texture2D Colors;
     int numColors;
+    [Range(-10, 10)] public float weight;
+
+    [Range(-10, 10)] public float Red;
+    [Range(-10, 10)] public float Green;
+    [Range(-10, 10)] public float Blue;
 
     int _screenWidth;
     int _screenHeight;
     RenderTexture _renderTexture;
-     Vector4[] ExportColors = new Vector4[32];
+     Vector4[] ExportColors;
 
     void Start()
     {
         CreateRenderTexture();
         numColors = Colors.width;
-
-        for(int i = 0; i < Colors.width; i++){
-            ExportColors[i] = (Colors.GetPixel(i, 0));
-        }
     }
 
     void CreateRenderTexture()
@@ -40,6 +41,13 @@ public class PixelRunner : MonoBehaviour
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
+        ExportColors = new Vector4[numColors];
+
+        for (int i = 0; i < Colors.width; i++)
+        {
+            ExportColors[i] = (Colors.GetPixel(i, 0));
+        }
+
         Graphics.Blit(src, _renderTexture);
 
         var mainKernel = PixelateComputeShader.FindKernel("Pixelate");
@@ -47,6 +55,12 @@ public class PixelRunner : MonoBehaviour
         PixelateComputeShader.SetInt("_numColors", numColors);
         PixelateComputeShader.SetInt("_ResultWidth", _renderTexture.width);
         PixelateComputeShader.SetInt("_ResultHeight", _renderTexture.height);
+        PixelateComputeShader.SetFloat("_Weight", weight);
+
+        PixelateComputeShader.SetFloat("_Red", Red);
+        PixelateComputeShader.SetFloat("_Green", Green);
+        PixelateComputeShader.SetFloat("_Blue", Blue);
+
         PixelateComputeShader.SetVectorArray("_Colors", ExportColors);
         PixelateComputeShader.SetTexture(mainKernel, "_Result", _renderTexture);
         PixelateComputeShader.GetKernelThreadGroupSizes(mainKernel, out uint xGroupSize, out uint yGroupSize, out _);
