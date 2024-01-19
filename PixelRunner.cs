@@ -6,7 +6,7 @@ public class PixelRunner : MonoBehaviour
     public Texture2D Colors;
     int numColors;
     [Range(-10, 10)] public float weight = 1f;
-    [Range(2, 20)] public int blocksize= 2f;
+    [Range(2, 20)] public int blocksize= 2;
 
     [Range(-10, 10)] public float Red = 1f;
     [Range(-10, 10)] public float Green = 1f;
